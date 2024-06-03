@@ -64,4 +64,14 @@ public class Order { //클래스면은 설계도이므로 복수형으로 쓰지
         }
         return totalPrice;
     }
+
+    //주문취소
+    public void cancelOrder() {
+        this.orderStatus = OrderStatus.CANCEL;
+
+        //재고를 원래대로 돌려놓는다.
+        for (OrderItem orderItem : orderItems) {
+            orderItem.cancel();
+        }
+    }
 }

@@ -28,15 +28,18 @@
                                 <li><a href="/admin/items">상품관리</a></li>
                             </ul>
                         </li>
-
                         <li><a href="/item/shop">전체상품</a></li>
                         <li><a href="/members/qa">문의하기</a></li>
                         <!-- /* sec:authorize="isAuthenticated()" 로그인한 경우만 보여준다 */ -->
                         <li><a href="/orders" sec:authorize="isAuthenticated()">구매이력</a></li>
-
                         <!-- /* sec:authorize="isAnonymous()" 로그인하지 않을때는 보여주고, 로그인하면 X */ -->
                         <li><a href="/members/login" sec:authorize="isAnonymous()">로그인</a></li>
                         <li><a href="/members/logout" sec:authorize="isAuthenticated()">로그아웃</a></li>
+                        <li sec:authorize="isAuthenticated()">
+                            <span sec:authentication="principal.username"></span>
+                            <span sec:authentication="principal.name"></span>
+                            <span sec:authentication="principal.address"></span>
+                        </li>
                     </ul>
                 </nav>
             </div>

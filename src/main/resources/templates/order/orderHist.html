@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/layout1}">
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+</head>
+
+<th:block layout:fragment="css">
+    <style>
+        .repImgDiv {
+           margin-right: 15px;
+           margin-left: 15px;
+           height: auto;
+        }
+
+        .repImg {
+           height: 100px;
+           width: 100px;
+        }
+
+        .card {
+           height: 100%;
+           padding: 30px;
+           margin-bottom: 20px;
+        }
+    </style>
+</th:block>
+
+<div layout:fragment="content">
+    <div class="bg-light py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">구매이력</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="site-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <h2 class="h3 mb-3 text-black">구매내역</h2>
+                    <div th:each="order: ${orders.getContent()}">
+                        <div class="d-flex mb-3 align-self-center">
+                            <th:block th:if="${#strings.equals(order.orderStatus, 'ORDER')}">
+                                <h4 th:text="${order.orderDate} + '주문'" style="font-size: 18px"></h4>
+                            </th:block>
+
+                            <th:block th:unless="${#strings.equals(order.orderStatus, 'ORDER')}">
+                                <h4 style="font-size: 18px">주문 취소완료</h4>
+                            </th:block>
+
+                        </div>
+                        <div class="card d-flex flex-row">
+                            <div th:each="orderItem : ${order.orderItemDtoList}"
+                                 class="d-flex mb-3" style="width: 90%">
+                                <div class="repImgDiv">
+                                    <img th:src="${orderItem.imgUrl}"
+                                         th:alt="${orderItem.itemNm}"
+                                         class="rounded repImg" />
+                                </div>
+                                <div class="align-self-center w-75">
+                                    <span th:text="${orderItem.itemNm}"
+                                            class="font-weight-bold" style="font-size: 18px; color: black"></span>
+                                    <div class="fs18 font-weight-light">
+                                        <span th:text="${#numbers.formatInteger(orderItem.orderPrice, 0, 'COMMA')}+'원'"></span> /
+                                        <span th:text="${orderItem.count} + '개'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <th:block th:if="${#strings.equals(order.orderStatus, 'ORDER')}">
+                                    <button type="button" class="btn btn-outline-secondary"
+                                    th:value="${order.orderId}" onclick="cancelOrder(this.value)">
+                                        주문취소</button>
+                                </th:block>
+                                <th:block th:unless="${#strings.equals(order.orderStatus, 'ORDER')}">
+                                    <p>
+                                        <button type="button" class="btn btn-primary"
+                                        th:value="${order.orderId}" onclick="deleteOrder(this.value)"
+                                        >삭제하기</button>
+                                    </p>
+                                </th:block>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <nav  th:with="start=${(orders.number/maxPage)*maxPage + 1}
+			                 ,end=(${(orders.totalPages == 0) ? 1 : (start + (maxPage - 1) < orders.totalPages ? start + (maxPage - 1) : orders.totalPages)})"
+                                aria-label="Page navigation example">
+                            <ul class="pagination d-flex justify-content-center">
+                                <li class="page-item" th:classappend="${orders.first}?'disabled'">
+                                    <!-- 검색어가 없을때는 주소에 쿼리스트링을 사용하지 X     -->
+                                    <a class="page-link"
+                                       th:href="@{'/orders/' + ${orders.number - 1}}">이전</a>
+                                </li>
+
+                                <li class="page-item"
+                                    th:each="page: ${#numbers.sequence(start, end)}"
+                                    th:classappend="${orders.number eq page-1}?'active':''">
+                                    <a
+                                            class="page-link" th:inline="text"
+                                            th:href="@{'/orders/' + ${page - 1}}">[[${page}]]</a>
+                                </li>
+
+                                <li class="page-item" th:classappend="${orders.last}?'disabled'">
+                                    <a class="page-link"
+                                       th:href="@{'/orders/' + ${orders.number + 1}}">다음</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <div class="col-md-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        function cancelOrder() {
+            const cancelConf = confirm("주문 취소하시겠습니까?");
+            if(!cancelConf) return; //취소버튼 선택시
+
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
+            $.ajax({
+				url : "/order/" + orderId + "/cancel",
+				type : "PATCH",
+				contentType : "application/json",
+				data : param,
+				beforeSend : function(xhr) {
+				    xhr.setRequestHeader(header, token);
+				},
+				dataType : "json",
+
+				cache : false,
+				success : function(result, status) {
+				    var path = location.pathname; // '/orders/o'
+
+				    //페이지 번호만 가져옴
+				    var page = path.substring(path.lastIndexOf("/") + 1);
+
+				    //사이트 nav 메뉴를 클릭하고 들어왔을때를 대비
+				    if(page == 'orders') {
+				        page = 0;
+				    }
+
+				    //주문취소 후에 원래 페이지로 이동시켜준다.
+				    location.href = '/orders/' + page;
+				},
+				error : function(jqXHR, status, error) {
+				}
+			});
+        }
+
+        function deleteOrder() {
+            const cancelConf = confirm("삭제하시겠습니까?");
+            if(!cancelConf) return; //취소버튼 선택시
+
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
+            $.ajax({
+				url : "/order/" + orderId + "/delete",
+				type : "PATCH",
+				contentType : "application/json",
+				data : param,
+				beforeSend : function(xhr) {
+				    xhr.setRequestHeader(header, token);
+				},
+				dataType : "json",
+
+				cache : false,
+				success : function(result, status) {
+				    var path = location.pathname; // '/orders/o'
+
+				    //페이지 번호만 가져옴
+				    var page = path.substring(path.lastIndexOf("/") + 1);
+
+				    //사이트 nav 메뉴를 클릭하고 들어왔을때를 대비
+				    if(page == 'orders') {
+				        page = 0;
+				    }
+
+				    //주문취소 후에 원래 페이지로 이동시켜준다.
+				    location.href = '/orders/' + page;
+				},
+				error : function(jqXHR, status, error) {
+				}
+			});
+        }
+
+
+    </script>
+</th:block>
+</html>
