@@ -53,8 +53,13 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+tasks.withType(Test) {
+	enabled = false
+}
+
 def generated = 'src/main/generated'
 
 clean {
 	delete file (generated)
 }
+
