@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class JasyptConfigTest {
-    public String key = "shop_key"; //암복화에 필요한 키
+    public String key = ""; //암복화에 필요한 키
 
     @Test
     void stringEncryptor() {
